@@ -15,7 +15,7 @@ const unsigned char XWon = 1;
 const unsigned char OWon = 2;
 const unsigned char DrawGame = 3;
 
-const unsigned long long NumberOfGamesToUseForTraining = 1000000;
+const unsigned long long NumberOfGamesToUseForTraining = 10000000;
 const unsigned long long NumberOfGamesToUseForVerification = 100;
 
 const bool AIGoesFirst = true;
@@ -382,17 +382,22 @@ public:
         return m_boards[m_moveIndex].IsDraw();
     }
 
-    void GetPossibleMoves(PossibleMoves& moves)
+    void GetPossibleMoves(PossibleMoves& moves) const
     {
         moves.m_turnIsX = TurnIsX();
         for (unsigned char i = 0; i < 9; i++)
         {
             if (m_boards[m_moveIndex].IsLegalMove(i))
             {
-                Board tmpBoard(m_boards[m_moveIndex]);
-                tmpBoard.Move(i);
+                const BoardHash oldBoardHash = m_boards[m_moveIndex].GetBoardHash();
+                unsigned short NumberToAdd = TurnIsX() ? X : O;
+                for (unsigned short j = 0; j < i; j++)
+                {
+                    NumberToAdd *= 3;
+                }
+                const BoardHash newBoardHash = oldBoardHash + NumberToAdd;
                 moves.m_isLegalMove[i] = true;
-                moves.m_boardHash[i] = tmpBoard.GetBoardHash();
+                moves.m_boardHash[i] = newBoardHash;
             }
             else
             {
