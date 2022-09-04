@@ -15,7 +15,7 @@ const unsigned char XWon = 1;
 const unsigned char OWon = 2;
 const unsigned char DrawGame = 3;
 
-const unsigned long long NumberOfGamesToUseForTraining = 10000000;
+const unsigned long long NumberOfGamesToUseForTraining = 1000000;
 const unsigned long long NumberOfGamesToUseForVerification = 100;
 
 const bool AIGoesFirst = true;
