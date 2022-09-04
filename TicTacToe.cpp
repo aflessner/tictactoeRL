@@ -448,17 +448,17 @@ public:
         memset(&m_weights, 0, sizeof(m_weights));
     }
 
-    unsigned char SelectBestPossibleMoveAndPrintDebug(PossibleMoves& moves)
+    const unsigned char SelectBestPossibleMoveAndPrintDebug(PossibleMoves& moves) const
     {
         return SelectMove(moves, false, true);
     }
 
-    unsigned char SelectBestPossibleMove(PossibleMoves& moves)
+    const unsigned char SelectBestPossibleMove(PossibleMoves& moves) const
     {
         return SelectMove(moves, false, false);
     }
 
-    unsigned char SelectTrainingMove(PossibleMoves& moves)
+    const unsigned char SelectTrainingMove(PossibleMoves& moves) const
     {
         const int percentRandom = 33;
         const int randomNumber = rand() % 100;
@@ -466,7 +466,7 @@ public:
         return SelectMove(moves, doRandomMove, false);
     }
 
-    unsigned char SelectMove(PossibleMoves& moves, bool doRandomMove, bool printMoves)
+    const unsigned char SelectMove(PossibleMoves& moves, const bool doRandomMove, const bool printMoves) const
     {
         GetWeights(moves);
 
@@ -611,7 +611,7 @@ int main()
         {
             moves.Reset();
             g.GetPossibleMoves(moves);
-            unsigned char moveIndex = theNN.SelectTrainingMove(moves);
+            const unsigned char moveIndex = theNN.SelectTrainingMove(moves);
             g.SelectMove(moveIndex);
         }
         theNN.Backpropagate(g);
@@ -639,7 +639,7 @@ int main()
         {
             moves.Reset();
             g.GetPossibleMoves(moves);
-            unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
+            const unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
             g.SelectMove(moveIndex);
         }
         if (g.XWonGame())
@@ -677,7 +677,7 @@ int main()
             {
                 moves.Reset();
                 g.GetPossibleMoves(moves);
-                unsigned char moveIndex = theNN.SelectBestPossibleMoveAndPrintDebug(moves);
+                const unsigned char moveIndex = theNN.SelectBestPossibleMoveAndPrintDebug(moves);
                 g.SelectMove(moveIndex);
             }
             else
