@@ -210,7 +210,7 @@ public:
 
     BoardHash GetBoardHash() const
     {
-        BoardHash bH = m_board[0] +
+        return m_board[0] +
             3 * m_board[1] +
             9 * m_board[2] +
             27 * m_board[3] +
@@ -219,10 +219,6 @@ public:
             729 * m_board[6] +
             2187 * m_board[7] +
             6561 * m_board[8];
-
-        assert(bH < 20000);
-
-        return bH;
     }
 
     void SetBoardFromHash(BoardHash hashValue)
