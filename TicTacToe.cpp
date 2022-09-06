@@ -402,6 +402,7 @@ public:
 
     void GetPossibleMoves(PossibleMoves& moves) const
     {
+        moves.Reset();
         moves.m_turnIsX = TurnIsX();
         for (unsigned char i = 0; i < 9; i++)
         {
@@ -535,6 +536,25 @@ public:
         return moveIndex;
     }
 
+    void Learn()
+    {
+        PossibleMoves moves;
+        Game g;
+
+        for (unsigned long long i = 0; i < NumberOfGamesToUseForTraining; i++)
+        {
+            g.Reset();
+            while (!g.IsGameOver())
+            {
+                g.GetPossibleMoves(moves);
+                g.SelectMove(SelectTrainingMove(moves));
+            }
+            Backpropagate(g);
+        }
+    }
+
+private:
+
     void Backpropagate(const Game& game)
     {
         float weightToAdd = 0.0f;
@@ -582,7 +602,6 @@ public:
         }
     }
 
-private:
     void GetWeights(PossibleMoves& moves) const
     {
         for (unsigned char i = 0; i < 9; i++)
@@ -750,25 +769,11 @@ int main()
 
     theMinMax.Learn();
 
-    PossibleMoves moves;
-    Game g;
-
     printf("Simulating %llu games for training...\n", NumberOfGamesToUseForTraining);
 
     ULONGLONG startMs = GetTickCount64();
 
-    for (unsigned long long i = 0; i < NumberOfGamesToUseForTraining; i++)
-    {
-        g.Reset();
-        while (!g.IsGameOver())
-        {
-            moves.Reset();
-            g.GetPossibleMoves(moves);
-            const unsigned char moveIndex = theNN.SelectTrainingMove(moves);
-            g.SelectMove(moveIndex);
-        }
-        theNN.Backpropagate(g);
-    }
+    theNN.Learn();
 
     ULONGLONG stopMs = GetTickCount64();
     ULONGLONG elapsedMs = stopMs - startMs;
@@ -776,52 +781,14 @@ int main()
 
     printf("Done training, took %.1f seconds\n", seconds);
 
+    printf("Simulating %llu games using Qlearning model playing against MinMax algorithm...\n", NumberOfGamesToUseForVerification);
+
     unsigned int draws = 0;
     unsigned int xWins = 0;
     unsigned int oWins = 0;
 
-    printf("Simulating %llu games using inference based on model...\n", NumberOfGamesToUseForVerification);
-
-    startMs = GetTickCount64();
-
-    for (unsigned int i = 0; i < NumberOfGamesToUseForVerification; i++)
-    {
-        g.Reset();
-        g.SelectMove(rand() % 8);
-        while (!g.IsGameOver())
-        {
-            moves.Reset();
-            g.GetPossibleMoves(moves);
-            const unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
-            g.SelectMove(moveIndex);
-        }
-        if (g.XWonGame())
-        {
-            xWins++;
-        }
-        else if (g.OWonGame())
-        {
-            oWins++;
-        }
-        else
-        {
-            draws++;
-        }
-        g.PrintGame();
-    }
-
-    stopMs = GetTickCount64();
-    elapsedMs = stopMs - startMs;
-    seconds = elapsedMs / 1000.0f;
-
-    printf("Done playing, took %.3f seconds (%llu ms)\n", seconds, elapsedMs);
-    printf("X Wins: %u\n", xWins);
-    printf("O Wins: %u\n", oWins);
-    printf("Draws: %u\n", draws);
-
-    draws = 0;
-    xWins = 0;
-    oWins = 0;
+    PossibleMoves moves;
+    Game g;
 
     for (unsigned int i = 0; i < NumberOfGamesToUseForVerification; i++)
     {
@@ -838,7 +805,6 @@ int main()
             }
             else
             {
-                moves.Reset();
                 g.GetPossibleMoves(moves);
                 const unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
                 g.SelectMove(moveIndex);
