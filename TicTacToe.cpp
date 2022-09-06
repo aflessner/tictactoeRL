@@ -221,6 +221,18 @@ public:
             6561 * m_board[8];
     }
 
+    BoardHash GetBoardHashOfMoveIndex(const unsigned char moveIndex) const
+    {
+        assert(moveIndex < 9);
+        const BoardHash currentBoardHash = GetBoardHash();
+        unsigned short NumberToAdd = TurnIsX() ? X : O;
+        for (unsigned short i = 0; i < moveIndex; i++)
+        {
+            NumberToAdd *= 3;
+        }
+        return currentBoardHash + NumberToAdd;
+    }
+
     void SetBoardFromHash(BoardHash hashValue)
     {
         assert(hashValue < 20000);
@@ -341,6 +353,16 @@ public:
         }
     }
 
+    BoardHash GetCurrentBoardHash() const
+    {
+        return m_boards[m_moveIndex].GetBoardHash();
+    }
+
+    BoardHash GetCurrentBoardHashOfMoveIndex(const unsigned char moveIndex) const
+    {
+        return m_boards[m_moveIndex].GetBoardHashOfMoveIndex(moveIndex);
+    }
+
     BoardHash GetBoardHash(const unsigned char boardIndex) const
     {
         assert(boardIndex < 9);
@@ -385,15 +407,8 @@ public:
         {
             if (m_boards[m_moveIndex].IsLegalMove(i))
             {
-                const BoardHash oldBoardHash = m_boards[m_moveIndex].GetBoardHash();
-                unsigned short NumberToAdd = TurnIsX() ? X : O;
-                for (unsigned short j = 0; j < i; j++)
-                {
-                    NumberToAdd *= 3;
-                }
-                const BoardHash newBoardHash = oldBoardHash + NumberToAdd;
                 moves.m_isLegalMove[i] = true;
-                moves.m_boardHash[i] = newBoardHash;
+                moves.m_boardHash[i] = GetCurrentBoardHashOfMoveIndex(i);
             }
             else
             {
@@ -589,6 +604,91 @@ private:
 
 NN theNN;
 
+const unsigned char XWonWeight = 100;
+const unsigned char OWonWeight = 0;
+const unsigned char DrawGameWeight = 50;
+
+struct BoardState
+{
+    unsigned char m_outcome;
+    unsigned char m_weight;
+};
+
+BoardState boards[20000] = {0};
+
+unsigned char MinMaxSelectBestMove(const Game& g)
+{
+    unsigned char currentMax = 0;
+    unsigned char currentMoveIndex = UCHAR_MAX;
+    for (unsigned char i = 0; i < 9; i++)
+    {
+        if (g.IsLegalMove(i))
+        {
+            const BoardHash bH = g.GetCurrentBoardHashOfMoveIndex(i);
+            if (currentMoveIndex == UCHAR_MAX ||
+                currentMax < boards[bH].m_weight)
+            {
+                currentMoveIndex = i;
+                currentMax = boards[bH].m_weight;
+            }
+        }
+    }
+    return currentMoveIndex;
+}
+
+void GenerateAllBoards(Game& g1)
+{
+    // explore all subtrees of legal moves
+    // and label terminal game states with outcomes and weights
+    for (unsigned char i = 0; i < 9; i++)
+    {
+        if (g1.IsLegalMove(i))
+        {
+            Game g2;
+            g2 = g1;
+            g2.SelectMove(i);
+            if (g2.IsGameOver())
+            {
+                //g2.PrintCurrentBoard();
+                const BoardHash bH = g2.GetCurrentBoardHash();
+                if (g2.XWonGame())
+                {
+                    boards[bH].m_outcome = XWon;
+                    boards[bH].m_weight = XWonWeight;
+                }
+                else if (g2.OWonGame())
+                {
+                    boards[bH].m_outcome = OWon;
+                    boards[bH].m_weight = OWonWeight;
+                }
+                else
+                {
+                    boards[bH].m_outcome = DrawGame;
+                    boards[bH].m_weight = DrawGameWeight;
+                }
+            }
+            else
+            {
+                GenerateAllBoards(g2);
+            }
+        }
+    }
+
+    const bool bIsMax = g1.TurnIsX();
+    unsigned char currentWeight = bIsMax ? 0 : UCHAR_MAX;
+    for (unsigned char i = 0; i < 9; i++)
+    {
+        if (g1.IsLegalMove(i))
+        {
+            const BoardHash bH = g1.GetCurrentBoardHashOfMoveIndex(i);
+            currentWeight = bIsMax ? max(currentWeight, boards[bH].m_weight) : min(currentWeight, boards[bH].m_weight);
+        }
+    }
+
+    const BoardHash bH = g1.GetCurrentBoardHash();
+    boards[bH].m_weight = currentWeight;
+}
+
 int main()
 {
     const time_t t = time(NULL);
@@ -597,6 +697,39 @@ int main()
 
     static_assert(sizeof(unsigned char) == 1);
     static_assert(sizeof(Board) == 12);
+
+    Game root;
+    GenerateAllBoards(root);
+
+    unsigned int draws = 0;
+    unsigned int xWins = 0;
+    unsigned int oWins = 0;
+    unsigned short count = 0;
+
+    for (unsigned short i = 0; i < 20000; i++)
+    {
+        if (boards[i].m_outcome == XWon)
+        {
+            xWins++;
+            count++;
+
+        }
+        else if (boards[i].m_outcome == OWon)
+        {
+            oWins++;
+            count++;
+        }
+        else if (boards[i].m_outcome == DrawGame)
+        {
+            draws++;
+            count++;
+        }
+    }
+
+    printf("Found %u boards!\n", count);
+    printf("X Wins: %u\n", xWins);
+    printf("O Wins: %u\n", oWins);
+    printf("Draws: %u\n", draws);
 
     PossibleMoves moves;
     Game g;
@@ -624,9 +757,9 @@ int main()
 
     printf("Done training, took %.1f seconds\n", seconds);
 
-    unsigned int draws = 0;
-    unsigned int xWins = 0;
-    unsigned int oWins = 0;
+    draws = 0;
+    xWins = 0;
+    oWins = 0;
 
     printf("Simulating %llu games using inference based on model...\n", NumberOfGamesToUseForVerification);
 
@@ -667,7 +800,11 @@ int main()
     printf("O Wins: %u\n", oWins);
     printf("Draws: %u\n", draws);
 
-    while (true)
+    draws = 0;
+    xWins = 0;
+    oWins = 0;
+
+    for (unsigned int i = 0; i < NumberOfGamesToUseForVerification; i++)
     {
         printf("Starting game against AI!\n");
         g.Reset();
@@ -676,26 +813,36 @@ int main()
             g.PrintCurrentBoard();
             if (AIGoesFirst == g.TurnIsX())
             {
-                moves.Reset();
-                g.GetPossibleMoves(moves);
-                const unsigned char moveIndex = theNN.SelectBestPossibleMoveAndPrintDebug(moves);
+                const unsigned char moveIndex = (g.GetMoveIndex() == 0) ? rand() % 9 : MinMaxSelectBestMove(g);
                 g.SelectMove(moveIndex);
+                printf("\nMinMax selected %u!\n", moveIndex);
             }
             else
             {
                 moves.Reset();
                 g.GetPossibleMoves(moves);
-                (void)theNN.SelectBestPossibleMoveAndPrintDebug(moves);
-                unsigned int moveIndex;
-                do
-                {
-                    printf("Input Move: ");
-                    scanf_s("%u", &moveIndex);
-                } while (!g.IsLegalMove(moveIndex));
+                const unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
                 g.SelectMove(moveIndex);
+                printf("\nQ Learner selected %u!\n", moveIndex);
             }
+        }
+        if (g.XWonGame())
+        {
+            xWins++;
+        }
+        else if (g.OWonGame())
+        {
+            oWins++;
+        }
+        else
+        {
+            draws++;
         }
         g.PrintCurrentBoard();
     }
+
+    printf("X Wins: %u\n", xWins);
+    printf("O Wins: %u\n", oWins);
+    printf("Draws: %u\n", draws);
 }
 
