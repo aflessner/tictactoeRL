@@ -16,7 +16,7 @@ const unsigned char OWon = 2;
 const unsigned char DrawGame = 3;
 
 const unsigned long long NumberOfGamesToUseForTraining = 1000000;
-const unsigned long long NumberOfGamesToUseForVerification = 100;
+const unsigned long long NumberOfGamesToUseForVerification = 10000;
 
 const bool AIGoesFirst = true;
 
@@ -465,12 +465,19 @@ public:
         memset(&m_weights, 0, sizeof(m_weights));
     }
 
-    const unsigned char SelectBestPossibleMoveAndPrintDebug(PossibleMoves& moves) const
+    const unsigned char SelectBestMoveAndPrintDebug(PossibleMoves& moves) const
     {
         return SelectMove(moves, false, true);
     }
 
-    const unsigned char SelectBestPossibleMove(PossibleMoves& moves) const
+    const unsigned char SelectBestMove(const Game& game) const
+    {
+        PossibleMoves moves;
+        game.GetPossibleMoves(moves);
+        return SelectMove(moves, false, false);
+    }
+
+    const unsigned char SelectBestMove(PossibleMoves& moves) const
     {
         return SelectMove(moves, false, false);
     }
@@ -642,6 +649,14 @@ public:
 
     unsigned char SelectBestMove(const Game& g) const
     {
+        // To make it more interesting randomize the first move
+        // since they all result in draws anyway
+
+        if (g.GetMoveIndex() == 0)
+        {
+            return rand() % 9;
+        }
+
         unsigned char currentMax = 0;
         unsigned char currentMoveIndex = UCHAR_MAX;
         for (unsigned char i = 0; i < 9; i++)
@@ -792,23 +807,19 @@ int main()
 
     for (unsigned int i = 0; i < NumberOfGamesToUseForVerification; i++)
     {
-        printf("Starting game against AI!\n");
         g.Reset();
         while (!g.IsGameOver())
         {
-            g.PrintCurrentBoard();
+            //g.PrintCurrentBoard();
             if (AIGoesFirst == g.TurnIsX())
             {
-                const unsigned char moveIndex = (g.GetMoveIndex() == 0) ? rand() % 9 : theMinMax.SelectBestMove(g);
-                g.SelectMove(moveIndex);
-                printf("\nMinMax selected %u!\n", moveIndex);
+                g.SelectMove(theMinMax.SelectBestMove(g));
+                //printf("\nMinMax selected %u!\n", moveIndex);
             }
             else
             {
-                g.GetPossibleMoves(moves);
-                const unsigned char moveIndex = theNN.SelectBestPossibleMove(moves);
-                g.SelectMove(moveIndex);
-                printf("\nQ Learner selected %u!\n", moveIndex);
+                g.SelectMove(theNN.SelectBestMove(g));
+                //printf("\nQ Learner selected %u!\n", moveIndex);
             }
         }
         if (g.XWonGame())
@@ -823,7 +834,7 @@ int main()
         {
             draws++;
         }
-        g.PrintCurrentBoard();
+        //g.PrintCurrentBoard();
     }
 
     printf("X Wins: %u\n", xWins);
