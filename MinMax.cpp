@@ -1,7 +1,5 @@
 
-#include <stdlib.h>
-#include <iostream>
-#include <Windows.h>
+#include "cstdafx.h"
 
 #include "Board.h"
 #include "Game.h"

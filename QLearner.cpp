@@ -1,6 +1,5 @@
-#include <cassert>
-#include <Windows.h>
-#include <iostream>
+
+#include "cstdafx.h"
 
 #include "Board.h"
 #include "Game.h"

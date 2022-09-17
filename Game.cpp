@@ -1,7 +1,9 @@
+
+#include "cstdafx.h"
+
 #include "Board.h"
 #include "Game.h"
 
-#include <cassert>
 
 Game::Game()
     : m_moveIndex(0)

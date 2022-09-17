@@ -1,8 +1,7 @@
 
+#include "cstdafx.h"
+
 #include "Board.h"
-#include <cassert>
-#include <Windows.h>
-#include <iostream>
 
 Board::Board()
 {

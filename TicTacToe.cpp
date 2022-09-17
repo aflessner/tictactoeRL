@@ -1,8 +1,5 @@
-#include <iostream>
-#include <cassert>
-#include <stdlib.h>
-#include <time.h>
-#include <Windows.h>
+
+#include "cstdafx.h"
 
 #include "Board.h"
 #include "Game.h"
