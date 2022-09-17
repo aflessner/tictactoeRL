@@ -1,23 +1,12 @@
 #pragma once
 
-typedef unsigned short BoardHash;
-
-class Board;
-
 class Weight
 {
 public:
-    Weight()
-    {
-        Reset();
-    }
+    Weight();
+    void Reset();
 
-    void Reset()
-    {
-        m_value = 0.0f;
-        m_count = 0;
-    }
-
+public:
     float m_value;
     unsigned long m_count;
 };
@@ -25,34 +14,11 @@ public:
 class PossibleMoves
 {
 public:
-    PossibleMoves()
-    {
-        Reset();
-    }
+    PossibleMoves();
+    void Reset();
+    unsigned char CountLegalMoves() const;
 
-    void Reset()
-    {
-        for (unsigned char i = 0; i < 9; i++)
-        {
-            m_isLegalMove[i] = false;
-            m_boardHash[i] = 0;
-            m_weights[i].Reset();
-        }
-    }
-
-    unsigned char CountLegalMoves() const
-    {
-        unsigned char legalMoves = 0;
-        for (unsigned char i = 0; i < 9; i++)
-        {
-            if (m_isLegalMove[i])
-            {
-                legalMoves++;
-            }
-        }
-        return legalMoves;
-    }
-
+public:
     bool m_turnIsX;
     bool m_isLegalMove[9];
     BoardHash m_boardHash[9];

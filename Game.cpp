@@ -4,6 +4,45 @@
 #include "Board.h"
 #include "Game.h"
 
+Weight::Weight()
+{
+    Reset();
+}
+
+void Weight::Reset()
+{
+    m_value = 0.0f;
+    m_count = 0;
+}
+
+PossibleMoves::PossibleMoves()
+{
+    Reset();
+}
+
+void PossibleMoves::Reset()
+{
+    for (unsigned char i = 0; i < 9; i++)
+    {
+        m_isLegalMove[i] = false;
+        m_boardHash[i] = 0;
+        m_weights[i].Reset();
+    }
+}
+
+unsigned char PossibleMoves::CountLegalMoves() const
+{
+    unsigned char legalMoves = 0;
+    for (unsigned char i = 0; i < 9; i++)
+    {
+        if (m_isLegalMove[i])
+        {
+            legalMoves++;
+        }
+    }
+    return legalMoves;
+}
+
 Game::Game()
     : m_moveIndex(0)
 {

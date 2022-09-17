@@ -1,13 +1,15 @@
 #pragma once
 
-struct BoardState
-{
-    unsigned char m_outcome;
-    unsigned char m_weight;
-};
-
 class MinMax
 {
+private:
+    
+    struct BoardState
+    {
+        unsigned char m_outcome;
+        unsigned char m_weight;
+    };
+
 public:
 
     MinMax();
