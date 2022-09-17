@@ -24,12 +24,18 @@
     <ClCompile Include="Game.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QLearner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Board.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Game.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QLearner.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
