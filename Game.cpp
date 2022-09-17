@@ -4,7 +4,6 @@
 #include "Board.h"
 #include "Game.h"
 
-
 Game::Game()
     : m_moveIndex(0)
 {

@@ -1,11 +1,6 @@
 
 #include "pch.h"
 
-#include "Board.h"
-#include "Game.h"
-#include "QLearner.h"
-#include "MinMax.h"
-
 // Neuron
 // 
 template <const unsigned long NumberOfWeights>
@@ -27,7 +22,7 @@ public:
         }
         return Relu(sum);
     }
-
+    
 private:
     static float Relu(const float x)
     {
