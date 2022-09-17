@@ -15,10 +15,10 @@ const bool AIGoesFirst = true;
 
 
 
-class NN
+class QLearner
 {
 public:
-    NN()
+    QLearner()
     {
         memset(&m_weights, 0, sizeof(m_weights));
     }
@@ -403,7 +403,7 @@ private:
     BoardState m_boards[20000];
 };
 
-NN theNN;
+QLearner theQLearner;
 MinMax theMinMax;
 
 int main()
@@ -421,7 +421,7 @@ int main()
 
     ULONGLONG startMs = GetTickCount64();
 
-    theNN.Learn();
+    theQLearner.Learn();
 
     ULONGLONG stopMs = GetTickCount64();
     ULONGLONG elapsedMs = stopMs - startMs;
@@ -451,7 +451,7 @@ int main()
             }
             else
             {
-                g.SelectMove(theNN.SelectBestMove(g));
+                g.SelectMove(theQLearner.SelectBestMove(g));
                 //printf("\nQ Learner selected %u!\n", moveIndex);
             }
         }
