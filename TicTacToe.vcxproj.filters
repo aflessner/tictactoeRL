@@ -30,7 +30,7 @@
     <ClCompile Include="MinMax.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cstdafx.cpp">
+    <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,7 +47,7 @@
     <ClInclude Include="QLearner.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cstdafx.h">
+    <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
