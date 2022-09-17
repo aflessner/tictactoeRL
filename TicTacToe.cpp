@@ -3,281 +3,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <Windows.h>
-
-typedef unsigned short BoardHash;
-
-const unsigned char Empty = 0;
-const unsigned char X = 1;
-const unsigned char O = 2;
-
-const unsigned char GameInProgress = 0;
-const unsigned char XWon = 1;
-const unsigned char OWon = 2;
-const unsigned char DrawGame = 3;
+#include "Board.h"
 
 const unsigned long long NumberOfGamesToUseForTraining = 1000000;
 const unsigned long long NumberOfGamesToUseForVerification = 10000;
 
 const bool AIGoesFirst = true;
-
-class Board
-{
-public:
-    Board()
-    {
-        Reset();
-    }
-
-    Board(const Board& oldBoard)
-    {
-        memcpy(&m_board, &oldBoard.m_board, sizeof(m_board));
-        m_gameState = oldBoard.m_gameState;
-        m_moveCount = oldBoard.m_moveCount;
-    }
-
-    void Reset()
-    {
-        memset(&m_board, Empty, sizeof(m_board));
-        m_gameState = GameInProgress;
-        m_moveCount = 0;
-    }
-    
-    bool XWonGame() const
-    {
-        return m_gameState == XWon;
-    }
-
-    bool OWonGame() const
-    {
-        return m_gameState == OWon;
-    }
-
-    bool IsDraw() const
-    {
-        return m_gameState == DrawGame;
-    }
-
-    bool IsGameOver() const
-    {
-        return m_gameState != GameInProgress;
-    }
-
-    bool IsLegalMove(const unsigned char i) const
-    {
-        assert(i < 9);
-        return m_board[i] == Empty;
-    }
-
-    // 0 1 2
-    // 3 4 5
-    // 6 7 8
-    static unsigned char GetBoardIndex(const unsigned char x, const unsigned char y)
-    {
-        assert(x < 3);
-        assert(y < 3);
-        return (y * 3) + x;
-    }
-
-    char GetStringAtBoardPosition(unsigned char i) const
-    {
-        assert(i <= 9);
-        unsigned char BoardValue = m_board[i];
-
-        assert(0 <= BoardValue && BoardValue <= O);
-
-        if (BoardValue == X)
-        {
-            return 'X';
-        }
-        else if (BoardValue == O)
-        {
-            return 'O';
-        }
-        else
-        {
-            return '-';
-        }
-    }
-
-    void CalculateGameState()
-    {
-        assert(m_gameState == GameInProgress);
-
-        if (m_moveCount < 5)
-        {
-            return;
-        }
-        if (WonGame(X))
-        {
-            m_gameState = XWon;
-        }
-        else if (WonGame(O))
-        {
-            m_gameState = OWon;
-        }
-        else if (m_moveCount == 9)
-        {
-            m_gameState = DrawGame;
-        }
-    }
-
-    void Move(const unsigned char x, const unsigned char y)
-    {
-        Move(GetBoardIndex(x, y));
-    }
-
-    void Move(const unsigned char movePosition)
-    {
-        assert(movePosition < 9);
-        assert(m_board[movePosition] == 0);
-
-        const unsigned char moveValue = TurnIsX() ? X : O;
-
-        m_board[movePosition] = moveValue;
-
-        m_moveCount++;
-
-        CalculateGameState();
-    }
-
-    void PrintGameOutcome() const
-    {
-        if (XWonGame())
-        {
-            printf("X Won the Game!\n");
-        }
-        else if (OWonGame())
-        {
-            printf("O Won the Game!\n");
-        }
-        else if (IsDraw())
-        {
-            printf("Game is a draw!\n");
-        }
-    }
-
-    void PrintBoardInternal(const bool AddTabs) const
-    {
-        printf("\n");
-        if (AddTabs)
-        {
-            printf("    ");
-        }
-        for (unsigned char i = 0; i < 9; i++)
-        {
-            printf("%c ", GetStringAtBoardPosition(i));
-            if (i == 2 || i == 5 || i == 8)
-            {
-                printf("\n");
-                if (AddTabs)
-                {
-                    printf("    ");
-                }
-            }
-        }
-        PrintGameOutcome();
-    }
-
-    void PrintBoardWithTabs() const
-    {
-        PrintBoardInternal(true);
-    }
-
-    void PrintBoard() const
-    {
-        PrintBoardInternal(false);
-    }
-    
-    unsigned char CountMovesFromBoard() const
-    {
-        unsigned char totalMoves = 0;
-
-        for (unsigned char i = 0; i < 9; i++)
-        {
-            if (m_board[i] != Empty)
-            {
-                totalMoves++;
-            }
-        }
-
-        return totalMoves;
-    }
-
-    bool TurnIsX() const
-    {
-        return (m_moveCount % 2) == 0;
-    }
-
-    BoardHash GetBoardHash() const
-    {
-        return m_board[0] +
-            3 * m_board[1] +
-            9 * m_board[2] +
-            27 * m_board[3] +
-            81 * m_board[4] +
-            243 * m_board[5] +
-            729 * m_board[6] +
-            2187 * m_board[7] +
-            6561 * m_board[8];
-    }
-
-    BoardHash GetBoardHashOfMoveIndex(const unsigned char moveIndex) const
-    {
-        assert(moveIndex < 9);
-        const BoardHash currentBoardHash = GetBoardHash();
-        unsigned short NumberToAdd = TurnIsX() ? X : O;
-        for (unsigned short i = 0; i < moveIndex; i++)
-        {
-            NumberToAdd *= 3;
-        }
-        return currentBoardHash + NumberToAdd;
-    }
-
-    void SetBoardFromHash(BoardHash hashValue)
-    {
-        assert(hashValue < 20000);
-
-        Reset();
-
-        unsigned char i = 0;
-        while (0 < hashValue)
-        {
-            unsigned char r = hashValue % 3;
-            m_board[i] = r;
-            hashValue /= 3;
-            i++;
-        }
-
-        m_moveCount = CountMovesFromBoard();
-
-        CalculateGameState();
-    }
-
-private:
-
-    bool WonGame(const unsigned char p) const
-    {
-        assert(p == X || p == O);
-
-        return
-            (m_board[0] == p && m_board[1] == p && m_board[2] == p) ||
-            (m_board[3] == p && m_board[4] == p && m_board[5] == p) ||
-            (m_board[6] == p && m_board[7] == p && m_board[8] == p)
-            ||
-            (m_board[0] == p && m_board[3] == p && m_board[6] == p) ||
-            (m_board[1] == p && m_board[4] == p && m_board[7] == p) ||
-            (m_board[2] == p && m_board[5] == p && m_board[8] == p)
-            ||
-            (m_board[0] == p && m_board[4] == p && m_board[8] == p) ||
-            (m_board[6] == p && m_board[4] == p && m_board[2] == p);
-    }
-
-private:
-    unsigned char m_board[9];
-    unsigned char m_gameState;
-    unsigned char m_moveCount;
-    unsigned char m_padding[1];
-};
 
 class Weight
 {
@@ -637,6 +368,81 @@ struct BoardState
     unsigned char m_outcome;
     unsigned char m_weight;
 };
+
+// Neuron
+// 
+template <const unsigned long NumberOfWeights>
+class Neuron
+{
+public:
+    Neuron()
+    {
+        memset(m_weights, 0, sizeof(m_weights));
+        m_bias = 0.0f;
+    }
+
+    const float CalculateOutput(const float inputs[NumberOfWeights]) const
+    {
+        float sum = m_bias;
+        for (unsigned i = 0; i < NumberOfWeights; i++)
+        {
+            sum += inputs[i] * m_weights[i];
+        }
+        return Relu(sum);
+    }
+
+private:
+    static float Relu(const float x)
+    {
+        return max(0.0f, x);
+    }
+
+private:
+    float m_weights[NumberOfWeights];
+    float m_bias;
+};
+
+template <const unsigned long InputLayerSize, const unsigned long OutputLayerSize>
+class DenseLayer
+{
+public:
+    DenseLayer()
+    {}
+
+    void Forward(const float inputs[InputLayerSize], float outputs[OutputLayerSize]) const
+    {
+        for (unsigned i = 0; i < OutputLayerSize; i++)
+        {
+            outputs[i] = m_neurons[i].CalculateOutput(inputs);
+        }
+    }
+
+private:
+    Neuron<InputLayerSize> m_neurons[OutputLayerSize];
+};
+
+static const ULONG TicTacToeBoardSize = 9;                              // 9 Board Positions
+static const ULONG TicTacToeInputLayerSize = TicTacToeBoardSize * 3;    // board positions * 3 states per board position = 27
+static const ULONG TicTacToeOutputLayerSize = TicTacToeBoardSize;       // histogram of softmax of output layer
+
+class DeepNN
+{
+    const float WinReward = 1.0f;
+    const float DrawReward = 0.0f;
+    const float LoseReward = -1.0f;
+
+public:
+
+    DeepNN()
+    {
+
+    }
+
+private:
+    DenseLayer<TicTacToeInputLayerSize, TicTacToeOutputLayerSize> m_denseLayer;
+};
+
+DeepNN theDeepNN;
 
 class MinMax
 {
