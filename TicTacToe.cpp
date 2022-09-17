@@ -1,6 +1,11 @@
 
 #include "pch.h"
 
+#include "Board.h"
+#include "Game.h"
+#include "QLearner.h"
+#include "MinMax.h"
+
 // Neuron
 // 
 template <const unsigned long NumberOfWeights>
